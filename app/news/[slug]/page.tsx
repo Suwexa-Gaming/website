@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: Props) {
       </header>
       {article.image ? (
         <figure className="shell">
-          <div className="relative aspect-[16/8] overflow-hidden" data-reveal="image">
+          <div className="relative aspect-[16/8] overflow-hidden">
             <Image src={article.image.src} alt={article.image.alt} fill priority sizes="100vw" quality={90} className="object-cover" />
           </div>
         </figure>

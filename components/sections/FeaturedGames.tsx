@@ -16,14 +16,14 @@ export function FeaturedGames() {
       </div>
 
       {/* The title takes over the screen: its own art, its own atmosphere. */}
-      <div className="relative isolate mt-10 flex min-h-[86svh] flex-col justify-end overflow-hidden md:mt-14">
+      <div className="relative isolate mt-10 flex min-h-[min(86svh,58rem)] flex-col justify-end overflow-hidden md:mt-14">
         <Image
           src={game.world.src}
           alt={game.world.alt}
           fill
-          sizes="100vw"
+          sizes="max(100vw, 185vh)"
           quality={85}
-          className="-z-10 object-cover object-[72%_center]"
+          className="parallax -z-10 object-cover object-[72%_center]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/55 to-ink/10" />
         <div className="absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-ink to-transparent" />

@@ -9,6 +9,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Piece = { x: number; y: number; vx: number; vy: number; r: number; kind: "white" | "black" | "queen" | "striker"; sunk: boolean };
 
 const SIZE = 640;
+/** Drawn at twice its layout size, so it stays sharp on high-density screens. */
+const SCALE = 2;
 const INSET = 34;
 const POCKET_R = 25;
 const COIN_R = 15;
@@ -16,6 +18,7 @@ const STRIKER_R = 21;
 const FRICTION = 0.9875;
 const REST = 0.92;
 const MAX_POWER = 25;
+const COIN_COUNT = 13;
 const START = { x: SIZE / 2, y: SIZE - INSET - 70 };
 
 function setup(): Piece[] {
@@ -50,8 +53,13 @@ const COLORS = {
 } as const;
 
 function draw(ctx: CanvasRenderingContext2D, pieces: Piece[], aim: { dx: number; dy: number } | null) {
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   ctx.clearRect(0, 0, SIZE, SIZE);
-  ctx.fillStyle = "#1a1d23";
+  const felt = ctx.createRadialGradient(SIZE / 2, SIZE / 2, 40, SIZE / 2, SIZE / 2, SIZE * 0.72);
+  felt.addColorStop(0, "#2a2620");
+  felt.addColorStop(0.55, "#191a1e");
+  felt.addColorStop(1, "#0f1013");
+  ctx.fillStyle = felt;
   ctx.fillRect(0, 0, SIZE, SIZE);
   ctx.strokeStyle = "rgba(226,171,59,0.42)";
   ctx.lineWidth = 1.5;
@@ -63,9 +71,13 @@ function draw(ctx: CanvasRenderingContext2D, pieces: Piece[], aim: { dx: number;
   ctx.arc(SIZE / 2, SIZE / 2, 20, 0, Math.PI * 2);
   ctx.stroke();
   for (const [x, y] of POCKETS) {
+    const hole = ctx.createRadialGradient(x, y, 4, x, y, POCKET_R);
+    hole.addColorStop(0, "#000000");
+    hole.addColorStop(0.8, "#050506");
+    hole.addColorStop(1, "#2a2118");
     ctx.beginPath();
     ctx.arc(x, y, POCKET_R, 0, Math.PI * 2);
-    ctx.fillStyle = "#050506";
+    ctx.fillStyle = hole;
     ctx.fill();
     ctx.stroke();
   }
@@ -83,10 +95,21 @@ function draw(ctx: CanvasRenderingContext2D, pieces: Piece[], aim: { dx: number;
       ctx.lineTo(striker.x + ux * (STRIKER_R + Math.min(len, 180) * 1.7), striker.y + uy * (STRIKER_R + Math.min(len, 180) * 1.7));
       ctx.stroke();
       ctx.setLineDash([]);
+      // How hard you are pulling.
+      const power = Math.min(len, 180) / 180;
+      ctx.beginPath();
+      ctx.arc(striker.x, striker.y, STRIKER_R + 7, -Math.PI / 2, -Math.PI / 2 + power * Math.PI * 2);
+      ctx.strokeStyle = "#f6c667";
+      ctx.lineWidth = 3;
+      ctx.stroke();
     }
   }
   for (const p of pieces) {
     if (p.sunk) continue;
+    ctx.beginPath();
+    ctx.arc(p.x + 1.5, p.y + 3, p.r + 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fill();
     const g = ctx.createRadialGradient(p.x - p.r * 0.3, p.y - p.r * 0.4, p.r * 0.1, p.x, p.y, p.r);
     g.addColorStop(0, COLORS[p.kind][0]);
     g.addColorStop(1, COLORS[p.kind][1]);
@@ -262,7 +285,7 @@ export function StrikeTable() {
   return (
     <div>
       <div className="relative aspect-square w-full">
-        <canvas ref={canvasRef} width={SIZE} height={SIZE} className="block h-full w-full" aria-hidden="true" />
+        <canvas ref={canvasRef} width={SIZE * SCALE} height={SIZE * SCALE} className="block h-full w-full" aria-hidden="true" />
         {/* Only the striker's zone captures touch, so the page still scrolls over the rest of the table. */}
         <button
           type="button"
@@ -306,7 +329,7 @@ export function StrikeTable() {
       </div>
       <div className="mt-3 flex items-center justify-between gap-4 text-sm text-ash" aria-live="polite">
         <span>
-          {hint} <span className="text-bone">{sunk} sunk.</span>
+          {sunk >= COIN_COUNT ? "Table cleared. Very nicely done." : hint} <span className="text-bone">{sunk} of {COIN_COUNT} sunk.</span>
         </span>
         <button type="button" onClick={reset} className="eyebrow shrink-0 py-2 text-[0.62rem] text-bone hover:text-gold">
           Reset

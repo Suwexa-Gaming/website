@@ -19,12 +19,12 @@ export default function GamesPage() {
 
       <div className="shell space-y-6">
         {games.map((game) => (
-          <Link key={game.slug} href={`/games/${game.slug}`} className="group relative isolate flex min-h-[70svh] flex-col justify-end overflow-hidden">
+          <Link key={game.slug} href={`/games/${game.slug}`} className="group relative isolate flex min-h-[min(70svh,44rem)] flex-col justify-end overflow-hidden">
             <Image
               src={game.world.src}
               alt={game.world.alt}
               fill
-              sizes="(min-width: 1800px) 1700px, 100vw"
+              sizes="max(100vw, 150vh)"
               quality={85}
               className="-z-10 object-cover object-[72%_center] transition-transform duration-[1.6s] ease-cinema group-hover:scale-[1.03]"
             />

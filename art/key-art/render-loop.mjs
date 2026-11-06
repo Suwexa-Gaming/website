@@ -12,8 +12,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const SUN = [0.0, 0.055, -1];
 const VIEWS = {
-  wide: { w: 1600, h: 900, cam: [0.4, 1.2, 17], target: [0, 5.6, 0], shift: [-1.06, -0.1], lens: 2.55, mode: 0, aa: 2, sun: SUN },
-  tall: { w: 720, h: 1280, cam: [0.3, 1.0, 21], target: [0, 5.4, 0], shift: [0.0, -0.32], lens: 2.0, mode: 0, aa: 2, sun: SUN },
+  wide: { w: 1920, h: 1080, cam: [0.4, 1.2, 17], target: [0, 5.6, 0], shift: [-1.06, -0.1], lens: 2.55, mode: 0, aa: 2, sun: SUN },
+  tall: { w: 810, h: 1440, cam: [0.3, 1.0, 21], target: [0, 5.4, 0], shift: [0.0, -0.32], lens: 2.0, mode: 0, aa: 2, sun: SUN },
 };
 
 const [outArg, viewArg = "wide", framesArg = "168"] = process.argv.slice(2);

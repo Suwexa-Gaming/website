@@ -36,7 +36,7 @@ export default function StudioPage() {
         decision is still close enough to the game to matter.
       </PageHeader>
 
-      <figure className="relative aspect-[12/5] min-h-64 w-full overflow-hidden" data-reveal="image">
+      <figure className="relative aspect-[12/5] min-h-64 w-full overflow-hidden">
         <Image
           src="/images/studio/ridge.webp"
           alt="A dark mountain ridge at last light, with a fractured monolith standing on the plain before it."

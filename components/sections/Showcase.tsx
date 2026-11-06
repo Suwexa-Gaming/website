@@ -38,7 +38,7 @@ export function Showcase() {
               alt="A survey sheet of invented terrain: fine contour lines, with gold index contours and a light grid over black."
               fill
               sizes="(min-width: 768px) 66vw, 100vw"
-              className="object-cover"
+              className="parallax object-cover"
             />
           </figure>
           <div className="md:col-span-4">
@@ -133,7 +133,7 @@ export function Showcase() {
               alt="The monolith scene as an engineering view: gold edge lines and scan lines on black, over a wire grid of terrain."
               fill
               sizes="100vw"
-              className="object-cover object-[60%_center]"
+              className="parallax object-cover object-[60%_center]"
             />
           </figure>
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/80 to-transparent pt-32">

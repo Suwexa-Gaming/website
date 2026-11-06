@@ -12,10 +12,10 @@ export function Footer() {
           </p>
           <nav aria-label="Footer" className="md:col-span-3 md:col-start-8">
             <p className="eyebrow text-ash">Explore</p>
-            <ul className="mt-5 space-y-3">
+            <ul className="mt-4 space-y-1.5">
               {navigation.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="link-line pb-0.5 text-[0.95rem]">
+                  <Link href={item.href} className="link-line inline-block py-1 text-[0.95rem]">
                     {item.label}
                   </Link>
                 </li>
@@ -24,19 +24,19 @@ export function Footer() {
           </nav>
           <div className="md:col-span-2">
             <p className="eyebrow text-ash">Studio</p>
-            <ul className="mt-5 space-y-3 text-[0.95rem]">
+            <ul className="mt-4 space-y-1.5 text-[0.95rem]">
               <li>
-                <Link href="/studio#press" className="link-line pb-0.5">
+                <Link href="/studio#press" className="link-line inline-block py-1">
                   Press kit
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="link-line pb-0.5">
+                <Link href="/privacy" className="link-line inline-block py-1">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="link-line pb-0.5">
+                <Link href="/terms" className="link-line inline-block py-1">
                   Terms of Use
                 </Link>
               </li>

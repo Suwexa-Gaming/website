@@ -64,8 +64,8 @@ export default async function GamePage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replace(/</g, "\\u003c") }} />
 
-      <header className="relative isolate flex min-h-svh flex-col justify-end overflow-hidden">
-        <Image src={game.world.src} alt={game.world.alt} fill priority sizes="100vw" quality={85} className="settle -z-10 object-cover object-[72%_center]" />
+      <header className="relative isolate flex min-h-[min(100svh,64rem)] flex-col justify-end overflow-hidden">
+        <Image src={game.world.src} alt={game.world.alt} fill priority sizes="max(100vw, 214vh)" quality={85} className="settle -z-10 object-cover object-[72%_center]" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/50 to-ink/10" />
         <div className="shell pt-40 pb-12 md:pb-16">
           <p className="eyebrow rise text-gold">{statusLabel[game.status]}</p>
@@ -101,11 +101,11 @@ export default async function GamePage({ params }: Props) {
         </section>
       ) : null}
 
-      <section aria-label="About the game" className="section shell grid gap-10 md:grid-cols-12 md:gap-6">
-        <p className="voice text-[2.1rem] text-bone md:col-span-6 md:text-[3.1rem]" data-reveal>
+      <section aria-label="About the game" className="section shell grid gap-10 lg:grid-cols-12 lg:gap-6">
+        <p className="voice text-[2.1rem] text-bone md:text-[3.1rem] lg:col-span-6" data-reveal>
           {game.summary}
         </p>
-        <div className="space-y-5 md:col-span-5 md:col-start-8" data-reveal>
+        <div className="space-y-5 lg:col-span-5 lg:col-start-8" data-reveal>
           {game.description.map((paragraph) => (
             <p key={paragraph} className="lede">
               {paragraph}
@@ -169,14 +169,14 @@ export default async function GamePage({ params }: Props) {
           <StoreButton game={game} />
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
             {game.privacyUrl ? (
-              <Link href={game.privacyUrl} className="link-line pb-0.5 text-ash">
+              <Link href={game.privacyUrl} className="link-line inline-block py-1 text-ash">
                 {game.title} privacy policy
               </Link>
             ) : null}
-            <Link href="/contact" className="link-line pb-0.5 text-ash">
+            <Link href="/contact" className="link-line inline-block py-1 text-ash">
               Support
             </Link>
-            <Link href="/games" className="inline-flex items-center gap-3 font-medium">
+            <Link href="/games" className="inline-flex items-center gap-3 py-1 font-medium">
               All games <Arrow />
             </Link>
           </div>

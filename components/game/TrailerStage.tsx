@@ -20,8 +20,8 @@ export function TrailerStage({ title, trailer }: { title: string; trailer: GameT
   useEffect(() => {
     const video = teaser.current;
     const host = stage.current;
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (!video || !host || connection?.saveData) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (!video || !host || connection?.saveData || /(^|-)(2g|3g)$/.test(connection?.effectiveType ?? "")) return;
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (calm.matches) return;
     const observer = new IntersectionObserver(

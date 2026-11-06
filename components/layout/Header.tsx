@@ -44,7 +44,7 @@ export function Header() {
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div
-        className={`transition-colors duration-500 ${
+        className={`relative transition-colors duration-500 ${
           scrolled && !open ? "border-b border-line/70 bg-ink/85 backdrop-blur-md" : "border-b border-transparent"
         }`}
       >
@@ -61,7 +61,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`eyebrow block py-3 transition-colors hover:text-bone ${isActive(item.href) ? "text-gold" : "text-bone/75"}`}
+                    className={`nav-link eyebrow block py-3 transition-colors hover:text-bone ${isActive(item.href) ? "text-gold" : "text-bone/75"}`}
                   >
                     {item.label}
                   </Link>
@@ -91,7 +91,7 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`eyebrow py-3 transition-colors hover:text-bone ${isActive(item.href) ? "text-gold" : "text-bone/75"}`}
+                  className={`nav-link eyebrow py-3 transition-colors hover:text-bone ${isActive(item.href) ? "text-gold" : "text-bone/75"}`}
                 >
                   {item.label}
                 </Link>
@@ -117,14 +117,17 @@ export function Header() {
             </span>
           </button>
         </div>
+        <div aria-hidden="true" className="scroll-progress absolute inset-x-0 bottom-0 h-px bg-gold/80" />
       </div>
 
       <div
         id="mobile-menu"
         inert={!open}
-        className={`fixed inset-0 flex flex-col bg-ink transition-opacity duration-500 lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 isolate flex flex-col bg-ink transition-opacity duration-500 lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
-        <nav aria-label="Mobile" className="shell flex flex-1 flex-col justify-center gap-1 pt-20">
+        <Image src="/images/studio/hero-tall.webp" alt="" fill sizes="100vw" className="-z-10 object-cover object-top opacity-35" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/30" />
+        <nav aria-label="Mobile" className="shell relative flex flex-1 flex-col justify-center gap-1 pt-20">
           {navigation.map((item, index) => (
             <Link
               key={item.href}
@@ -140,7 +143,7 @@ export function Header() {
             </Link>
           ))}
         </nav>
-        <Link href={`/games/${featured.slug}`} className="shell flex items-center gap-4 border-t border-line py-5">
+        <Link href={`/games/${featured.slug}`} className="shell relative flex items-center gap-4 border-t border-line py-5">
           <span className="relative block h-14 w-24 shrink-0 overflow-hidden">
             <Image src={featured.keyArt.src} alt="" fill sizes="96px" className="object-cover" />
           </span>

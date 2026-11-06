@@ -14,10 +14,12 @@ function HeroArt() {
   const { props: tall } = getImageProps({ ...common, src: "/images/studio/hero-tall.webp", width: 1170, height: 2080 });
   return (
     <picture>
-      <source media="(min-width: 768px)" srcSet={wide.srcSet} sizes="100vw" />
-      <source media="(max-width: 767.98px)" srcSet={tall.srcSet} sizes="100vw" />
+      <link rel="preload" as="image" media="(min-aspect-ratio: 6/5)" imageSrcSet={wide.srcSet} imageSizes="max(100vw, 178vh)" fetchPriority="high" />
+      <link rel="preload" as="image" media="(max-aspect-ratio: 6/5)" imageSrcSet={tall.srcSet} imageSizes="100vw" fetchPriority="high" />
+      <source media="(min-aspect-ratio: 6/5)" srcSet={wide.srcSet} sizes="max(100vw, 178vh)" />
+      <source srcSet={tall.srcSet} sizes="100vw" />
       {/* eslint-disable-next-line jsx-a11y/alt-text -- alt text arrives through the image props */}
-      <img {...tall} className="settle absolute inset-0 h-full w-full object-cover object-top md:object-center" />
+      <img {...tall} className="settle absolute inset-0 h-full w-full object-cover object-top art-wide:object-[100%_50%]" />
     </picture>
   );
 }
@@ -28,14 +30,14 @@ export function Hero() {
 
   return (
     <section aria-labelledby="hero-title" className="relative isolate flex min-h-svh flex-col overflow-hidden">
-      <div className="absolute inset-0 -z-10">
+      <div className="hero-recede absolute inset-0 -z-10 origin-[75%_40%]">
         <HeroArt />
         <HeroMotion />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink from-35% via-ink/75 via-[58%] to-transparent to-[72%] md:from-ink md:from-0% md:via-transparent md:via-40% md:to-transparent" />
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-ink/70 via-transparent to-transparent md:block" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink from-30% via-ink/55 via-[44%] to-transparent to-[60%] max-sm:via-ink/80 max-sm:via-[50%] max-sm:to-[66%] art-wide:from-ink art-wide:from-0% art-wide:via-transparent art-wide:via-40% art-wide:to-transparent" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-ink/70 via-transparent to-transparent art-wide:block" />
       </div>
 
-      <div className="shell flex flex-1 flex-col justify-end pt-[44svh] pb-7 md:pt-32 md:pb-10">
+      <div className="shell flex flex-1 flex-col justify-end pt-[44svh] pb-7 art-wide:pt-32 md:pb-10">
         <p className="eyebrow rise text-gold max-sm:text-[0.62rem] max-sm:tracking-[0.16em]" style={{ "--d": "150ms" } as React.CSSProperties}>
           Independent game development studio
         </p>
