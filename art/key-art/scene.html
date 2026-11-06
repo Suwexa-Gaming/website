@@ -1,0 +1,413 @@
+<!doctype html>
+<!--
+  Suwexa Gaming key art. A fractured monolith over a dark ridge at last light.
+  Original artwork: every pixel is computed by the shader below, with no
+  third-party imagery. Rendered offline by render.mjs, then graded by grade.py.
+-->
+<meta charset="utf-8" />
+<canvas id="c"></canvas>
+<script id="fs" type="x-shader">#version 300 es
+precision highp float;
+uniform vec2 uRes;
+uniform vec3 uCam;
+uniform vec3 uTarget;
+uniform vec2 uShift;
+uniform float uLens;
+uniform int uMode;
+uniform int uAA;
+uniform vec3 uSunDir;
+uniform float uLoop;
+out vec4 fragColor;
+
+const float PI = 3.14159265;
+const float TAU = 6.2831853;
+const vec3 GOLD = vec3(1.0, 0.62, 0.20);
+const vec3 M = vec3(0.0, 3.1, 0.0);
+
+float h11(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+float h21(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+vec3 h13(float p) { return vec3(h11(p), h11(p + 17.3), h11(p + 41.7)); }
+
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y);
+}
+
+float ridged(vec2 p, int oct) {
+  float a = 0.5, s = 0.0, w = 1.0;
+  mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
+  for (int i = 0; i < oct; i++) {
+    float n = 1.0 - abs(noise(p) * 2.0 - 1.0);
+    n = n * n;
+    s += n * a * w;
+    w = clamp(n * 2.2, 0.0, 1.0);
+    a *= 0.5;
+    p = r * p * 2.03 + 3.1;
+  }
+  return s;
+}
+
+float terrain(vec2 p, int oct) {
+  // Mountains stand behind and beside the monolith; the near ground stays low.
+  float open = smoothstep(4.0, 30.0, abs(p.x) * 0.8 + max(-p.y, 0.0) * 1.15);
+  float ridge = ridged(p * 0.075 + vec2(4.2, 1.7), oct);
+  float h = (ridge * 13.0 - 3.6) * (0.05 + open * 1.05);
+  h += (noise(p * 0.45) - 0.5) * 0.5;
+  // The plateau the monolith stands on.
+  h = mix(0.05 + (noise(p * 1.6) - 0.5) * 0.14, h, smoothstep(1.6, 5.2, length(p)));
+  return h - 0.25;
+}
+
+mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+float sdBox(vec3 p, vec3 b) { vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0); }
+
+const int SEG = 7;
+const vec3 HALF = vec3(1.02, 5.2, 0.36);
+const vec3 CUT = vec3(0.46, 0.885, 0.07);
+
+// Where the slabs of the monolith sit. The higher slabs have drifted further.
+vec3 segOffset(int i) {
+  float t = float(i) / float(SEG - 1);
+  vec3 r = h13(float(i) * 3.7 + 2.0) - 0.5;
+  float a = t * sqrt(t);
+  float ph = TAU * uLoop + float(i) * 1.1;
+  vec3 drift = vec3(sin(ph) * 0.05, sin(ph + 1.7) * 0.075, cos(ph) * 0.04) * a;
+  return vec3(r.x * 1.25 * a - 0.15 * a, 0.03 + a * 1.25 + t * 0.15, r.z * 0.95 * a) + drift;
+}
+
+float cutAt(int i) { return -4.7 + 9.4 * float(i) / float(SEG) + (h11(float(i) + 9.0) - 0.5) * 0.55; }
+
+float monolith(vec3 p) {
+  float bound = sdBox(p - M - vec3(0.0, 0.7, 0.0), vec3(2.0, 6.7, 1.6));
+  if (bound > 0.6) return bound;
+  float d = 1e9;
+  for (int i = 0; i < SEG; i++) {
+    vec3 q = p - M - segOffset(i);
+    float t = float(i) / float(SEG - 1);
+    float sway = sin(TAU * uLoop + float(i) * 0.8) * 0.018 * t;
+    q.xy = rot((h11(float(i) + 4.0) - 0.5) * 0.34 * t + sway) * q.xy;
+    q.yz = rot((h11(float(i) + 8.0) - 0.5) * 0.30 * t - sway) * q.yz;
+    float b = sdBox(q, HALF - 0.012) - 0.012;
+    float c = dot(q, CUT);
+    float lo = i == 0 ? -100.0 : cutAt(i) + 0.012;
+    float hi = i == SEG - 1 ? 100.0 : cutAt(i + 1) - 0.012;
+    b = max(b, max(lo - c, c - hi));
+    d = min(d, b);
+  }
+  return d;
+}
+
+const int SHARDS = 56;
+float shards(vec3 p) {
+  float bound = length((p - vec3(0.0, 6.5, 0.0)) * vec3(1.0, 0.55, 1.0)) - 7.0;
+  if (bound > 0.5) return bound;
+  float d = 1e9;
+  for (int i = 0; i < SHARDS; i++) {
+    float fi = float(i);
+    vec3 r = h13(fi * 1.37 + 5.0);
+    float t = fi / float(SHARDS);
+    float y = mix(5.0, 12.2, pow(t + 0.001, 0.8));
+    float ang = fi * 2.399 + r.x;
+    float rad = mix(1.2, 4.8, r.y) * (0.45 + 0.8 * t);
+    float ph = TAU * uLoop + fi * 2.3;
+    vec3 c = vec3(cos(ang) * rad, y + (r.z - 0.5) * 0.7, sin(ang) * rad * 0.7);
+    c += vec3(sin(ph) * 0.20, sin(ph + 1.3) * 0.26, cos(ph) * 0.16);
+    vec3 q = p - c;
+    float spin = TAU * uLoop * (mod(fi, 2.0) < 1.0 ? 1.0 : -1.0);
+    q.xy = rot(fi * 1.9 + spin) * q.xy;
+    q.yz = rot(fi * 2.7 + spin) * q.yz;
+    float s = mix(0.05, 0.40, pow(h11(fi + 2.2), 2.2));
+    q /= vec3(0.55, 1.25, 0.35);
+    float e = (abs(q.x) + abs(q.y) + abs(q.z) - s) * 0.33;
+    d = min(d, e);
+  }
+  return d;
+}
+
+// Returns distance; id 0 terrain, 1 object.
+vec2 map(vec3 p, int oct) {
+  float t = (p.y - terrain(p.xz, oct)) * 0.28;
+  float m = min(monolith(p), shards(p));
+  return m < t ? vec2(m, 1.0) : vec2(t, 0.0);
+}
+
+vec3 nrm(vec3 p, float e, int oct) {
+  vec2 k = vec2(1, -1);
+  return normalize(k.xyy * map(p + k.xyy * e, oct).x + k.yyx * map(p + k.yyx * e, oct).x +
+                   k.yxy * map(p + k.yxy * e, oct).x + k.xxx * map(p + k.xxx * e, oct).x);
+}
+
+float softShadow(vec3 ro, vec3 rd) {
+  float res = 1.0, t = 0.06;
+  for (int i = 0; i < 48 && t < 40.0; i++) {
+    float h = map(ro + rd * t, 5).x;
+    res = min(res, 9.0 * h / t);
+    if (res < 0.005) break;
+    t += clamp(h, 0.03, 1.4);
+  }
+  res = clamp(res, 0.0, 1.0);
+  return res * res * (3.0 - 2.0 * res);
+}
+
+float ao(vec3 p, vec3 n) {
+  float o = 0.0, w = 1.0;
+  for (int i = 1; i <= 5; i++) {
+    float d = 0.09 * float(i) * float(i);
+    o += (d - map(p + n * d, 5).x) * w;
+    w *= 0.55;
+  }
+  return clamp(1.0 - o * 0.55, 0.0, 1.0);
+}
+
+vec3 sky(vec3 rd) {
+  float y = max(rd.y, 0.0);
+  float s = max(dot(rd, uSunDir), 0.0);
+  vec3 c = mix(vec3(0.0085, 0.0085, 0.0100), vec3(0.0030, 0.0034, 0.0048), pow(y, 0.42));
+  // Band of last light along the horizon, wide but thin.
+  float band = exp(-y * 20.0) * (0.02 + 0.98 * pow(max(dot(normalize(rd * vec3(1, 0, 1)), normalize(uSunDir * vec3(1, 0, 1))), 0.0), 34.0));
+  c += vec3(1.0, 0.42, 0.10) * band * 1.25;
+  c += vec3(1.0, 0.50, 0.15) * pow(s, 34.0) * 0.17 + vec3(1.0, 0.60, 0.24) * pow(s, 240.0) * 0.7;
+  c += vec3(1.0, 0.80, 0.52) * pow(s, 1600.0) * 2.4;
+  // Thin high cloud, catching the light from below.
+  vec2 uv = rd.xz / (rd.y + 0.16);
+  float cl = noise(uv * vec2(0.8, 3.0) + 3.0) * 0.6 + noise(uv * vec2(2.0, 7.0) + 9.0) * 0.4;
+  cl = smoothstep(0.54, 0.82, cl) * smoothstep(0.02, 0.2, y) * exp(-y * 3.4);
+  c = mix(c, vec3(0.42, 0.20, 0.07) * (0.012 + pow(s, 16.0) * 0.8), cl * 0.6);
+  // Sparse stars, only high up.
+  vec3 st = floor(rd * 340.0);
+  float star = step(0.9968, h21(st.xy + st.z * 13.1)) * h21(st.yz);
+  c += vec3(0.8, 0.85, 1.0) * star * 0.14 * smoothstep(0.16, 0.5, y);
+  return c;
+}
+
+vec3 seamGlow(vec3 ro, vec3 rd, float tMax) {
+  // Light leaking from between the slabs, integrated along the ray.
+  vec3 g = vec3(0.0);
+  vec3 oc = ro - (M + vec3(0.0, 1.0, 0.0));
+  float closest = length(oc - rd * dot(oc, rd));
+  if (closest > 7.5) return g;
+  const int STEPS = 24;
+  float t0 = max(length(ro - M) - 11.0, 0.0);
+  float t1 = min(tMax, t0 + 22.0);
+  float dt = (t1 - t0) / float(STEPS);
+  for (int s = 0; s < STEPS; s++) {
+    vec3 p = ro + rd * (t0 + dt * (float(s) + 0.5));
+    for (int i = 1; i < SEG; i++) {
+      vec3 c = M + (segOffset(i) + segOffset(i - 1)) * 0.5;
+      float cy = cutAt(i) / CUT.y;
+      vec3 q = p - c - vec3(0.0, cy, 0.0);
+      float pl = abs(dot(q, CUT));
+      float rad = length(q.xz * vec2(0.8, 1.8));
+      g += (exp(-pl * 3.2) * exp(-rad * 1.6) * 0.5 + exp(-length(q) * 2.0) * 0.14) * dt;
+    }
+  }
+  return vec3(1.0, 0.55, 0.17) * g * 0.27 * (1.0 + 0.2 * sin(TAU * uLoop));
+}
+
+vec3 shade(vec3 ro, vec3 rd) {
+  float t = 0.02;
+  float id = -1.0;
+  for (int i = 0; i < 520 && t < 170.0; i++) {
+    vec3 p = ro + rd * t;
+    vec2 m = map(p, 6);
+    if (m.x < 0.00042 * t) { id = m.y; break; }
+    t += min(m.x * 0.85, 1.6);
+  }
+  vec3 col;
+  if (id < -0.5) {
+    t = 170.0;
+    col = sky(rd);
+  } else {
+    vec3 p = ro + rd * t;
+    int oct = 10;
+    float e = max(0.0012 * t, 0.002);
+    vec3 n = nrm(p, e, oct);
+    float dif = max(dot(n, uSunDir), 0.0);
+    float sha = dif > 0.001 ? softShadow(p + n * 0.02, uSunDir) : 0.0;
+    float occ = ao(p, n);
+    vec3 r = reflect(rd, n);
+    float fre = pow(clamp(1.0 + dot(rd, n), 0.0, 1.0), 4.0);
+    vec3 skyAmb = vec3(0.017, 0.019, 0.026) * (0.55 + 0.45 * n.y);
+
+    if (id < 0.5) {
+      float strata = noise(vec2(p.y * 2.6 + noise(p.xz * 0.3) * 2.0, p.x * 0.2));
+      vec3 alb = mix(vec3(0.030, 0.028, 0.030), vec3(0.070, 0.058, 0.050), strata);
+      alb = mix(alb, vec3(0.085, 0.085, 0.09), smoothstep(0.58, 0.95, n.y) * smoothstep(3.0, 9.0, p.y));
+      col = alb * vec3(1.0, 0.58, 0.24) * dif * sha * 3.4;
+      col += alb * skyAmb * occ * 7.0;
+      col += alb * vec3(1.0, 0.55, 0.2) * pow(clamp(1.0 + dot(rd, n), 0.0, 1.0), 3.0) * 0.25 * occ;
+      // Pool of light at the foot of the monolith.
+      float pool = exp(-length(p.xz - M.xz) * 0.8);
+      col += alb * vec3(1.0, 0.54, 0.17) * pool * 2.6 * occ;
+    } else {
+      float e2 = 0.012;
+      vec3 n2 = nrm(p, e2, 5);
+      vec3 n3 = nrm(p, 0.0016, 5);
+      float edge = smoothstep(0.018, 0.22, length(n2 - n3));
+      float brush = noise(p.xy * vec2(3.0, 90.0)) * 0.5 + noise(p.zy * vec2(3.0, 90.0)) * 0.5;
+      vec3 alb = vec3(0.012, 0.013, 0.015);
+      col = alb * dif * sha * 3.0 + alb * skyAmb * occ * 4.0;
+      vec3 rf = sky(normalize(r + (brush - 0.5) * vec3(0.05, 0.14, 0.05)));
+      float rfSpec = mix(0.05, 1.0, fre);
+      col += rf * rfSpec * occ * (0.55 + 0.45 * sha);
+      col += vec3(1.0, 0.70, 0.36) * pow(max(dot(r, uSunDir), 0.0), 60.0) * sha * 2.8;
+      // Thin struck edges: the one bright line that draws the object.
+      col += vec3(1.0, 0.70, 0.34) * edge * (0.08 + 0.92 * sha * (0.3 + dif)) * 0.62;
+      // Warm bounce from the seams and the ground.
+      col += vec3(1.0, 0.52, 0.16) * alb * 18.0 * exp(-max(p.y - M.y + 5.0, 0.0) * 0.7) * max(-n.y * 0.5 + 0.5, 0.0);
+    }
+    // Aerial perspective, warmer toward the sun.
+    float fog = 1.0 - exp(-t * 0.0105 * exp(-max(p.y, 0.0) * 0.06));
+    vec3 fogC = mix(vec3(0.0065, 0.0068, 0.0085), vec3(0.50, 0.215, 0.055), pow(max(dot(rd, uSunDir), 0.0), 26.0));
+    col = mix(col, fogC, fog);
+  }
+  col += seamGlow(ro, rd, t);
+  return col;
+}
+
+vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+
+// Plan view of the same terrain, drawn as a survey sheet with a route across it.
+vec3 surveyPass(vec2 px) {
+  vec2 uv = (px - 0.5 * uRes) / uRes.y;
+  vec2 p = uv * 40.0 + vec2(13.0, -19.0);
+  float h = terrain(p, 6);
+  float e = 0.05;
+  float gx = terrain(p + vec2(e, 0.0), 6) - h, gz = terrain(p + vec2(0.0, e), 6) - h;
+  float g = length(vec2(gx, gz)) / e;
+  float spacing = 0.55;
+  float f = abs(fract(h / spacing + 0.5) - 0.5) * spacing / max(g, 0.05);
+  float px_w = 40.0 / uRes.y;
+  float line = 1.0 - smoothstep(0.0, px_w * 1.1, f);
+  float idx = abs(fract(h / (spacing * 5.0) + 0.5) - 0.5) * spacing * 5.0 / max(g, 0.05);
+  float major = 1.0 - smoothstep(0.0, px_w * 1.9, idx);
+  vec3 c = vec3(0.022, 0.024, 0.029) + vec3(0.016, 0.014, 0.012) * clamp(h * 0.12, 0.0, 1.0);
+  c += vec3(0.42, 0.43, 0.46) * line * 0.62 + vec3(0.95, 0.66, 0.26) * major * 0.95;
+  // Graticule.
+  vec2 gr = abs(fract(p / 8.0 + 0.5) - 0.5) * 8.0;
+  c += vec3(0.10) * (1.0 - smoothstep(0.0, px_w, min(gr.x, gr.y))) * 0.55;
+  return pow(c, vec3(2.2));
+}
+
+// Same scene as an engineering view: wire lines and depth, no lighting.
+vec3 wirePass(vec3 ro, vec3 rd) {
+  float t = 0.02, id = -1.0;
+  for (int i = 0; i < 420 && t < 120.0; i++) {
+    vec3 p = ro + rd * t;
+    vec2 m = map(p, 5);
+    if (m.x < 0.0006 * t) { id = m.y; break; }
+    t += min(m.x * 0.85, 1.6);
+  }
+  if (id < -0.5) return vec3(0.0012, 0.0014, 0.002);
+  vec3 p = ro + rd * t;
+  float w = 0.0014 * t;
+  vec3 c = vec3(0.0);
+  float depth = exp(-t * 0.034);
+  if (id < 0.5) {
+    vec2 g = abs(fract(p.xz / 0.72 + 0.5) - 0.5) * 0.72;
+    float l = 1.0 - smoothstep(0.0, w * 1.3, min(g.x, g.y));
+    vec3 n = nrm(p, 0.02 * max(t * 0.04, 1.0), 5);
+    float lam = 0.26 + 0.74 * max(dot(n, normalize(vec3(-0.3, 0.42, -0.7))), 0.0);
+    c = vec3(0.012, 0.013, 0.016) + vec3(0.30, 0.32, 0.36) * l * depth * lam;
+  } else {
+    vec3 n2 = nrm(p, 0.014, 5), n3 = nrm(p, 0.0016, 5);
+    float edge = smoothstep(0.02, 0.18, length(n2 - n3));
+    c = vec3(0.004) + vec3(1.0, 0.62, 0.2) * edge * 1.7;
+    vec3 n = n3;
+    c += vec3(0.5, 0.31, 0.12) * pow(abs(n.z), 8.0) * 0.016;
+    // Scan lines on faces, showing the object as data.
+    c += vec3(1.0, 0.62, 0.2) * 0.07 * (1.0 - smoothstep(0.0, w * 2.0, abs(fract(p.y * 3.0) - 0.5) / 3.0));
+  }
+  return c;
+}
+
+void main() {
+  vec3 tot = vec3(0.0);
+  vec3 f = normalize(uTarget - uCam);
+  vec3 r = normalize(cross(f, vec3(0, 1, 0)));
+  vec3 u = cross(r, f);
+  for (int a = 0; a < uAA; a++) {
+    for (int b = 0; b < uAA; b++) {
+      vec2 off = (vec2(a, b) + 0.5) / float(uAA) - 0.5;
+      vec2 px = gl_FragCoord.xy + off;
+      vec3 c;
+      if (uMode == 2) {
+        c = surveyPass(px);
+      } else {
+        vec2 uv = (2.0 * px - uRes) / uRes.y + uShift;
+        vec3 rd = normalize(uv.x * r + uv.y * u + uLens * f);
+        c = uMode == 1 ? wirePass(uCam, rd) : shade(uCam, rd);
+      }
+      tot += c;
+    }
+  }
+  tot /= float(uAA * uAA);
+  vec3 c = uMode == 0 ? aces(tot * 1.25) : clamp(tot, 0.0, 1.0);
+  c = pow(c, vec3(1.0 / 2.2));
+  c += (h21(gl_FragCoord.xy) - 0.5) / 255.0;
+  fragColor = vec4(c, 1.0);
+}
+</script>
+<script>
+  window.renderScene = async (opt) => {
+    const c = document.getElementById("c");
+    c.width = opt.w;
+    c.height = opt.h;
+    const gl = c.getContext("webgl2", { preserveDrawingBuffer: true, antialias: false });
+    if (!gl) throw new Error("no webgl2");
+    // Compiling is by far the slowest step, so one program serves every frame.
+    let prog = window.sceneProgram;
+    if (!prog) {
+      const compile = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      };
+      prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, `#version 300 es
+        in vec2 a; void main(){ gl_Position = vec4(a,0.,1.); }`));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById("fs").textContent.trim()));
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);
+      gl.bindAttribLocation(prog, 0, "a");
+      const loc = gl.getAttribLocation(prog, "a");
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      window.sceneProgram = prog;
+    }
+    const U = (n) => gl.getUniformLocation(prog, n);
+    gl.uniform2f(U("uRes"), opt.w, opt.h);
+    gl.uniform3fv(U("uCam"), opt.cam);
+    gl.uniform3fv(U("uTarget"), opt.target);
+    gl.uniform2fv(U("uShift"), opt.shift);
+    gl.uniform1f(U("uLens"), opt.lens);
+    gl.uniform1i(U("uMode"), opt.mode);
+    gl.uniform1i(U("uAA"), opt.aa);
+    gl.uniform1f(U("uLoop"), opt.loop ?? 0);
+    const sun = opt.sun;
+    const l = Math.hypot(...sun);
+    gl.uniform3f(U("uSunDir"), sun[0] / l, sun[1] / l, sun[2] / l);
+    gl.viewport(0, 0, opt.w, opt.h);
+    gl.enable(gl.SCISSOR_TEST);
+    const T = opt.tile;
+    let done = 0;
+    for (let y = 0; y < opt.h; y += T) {
+      for (let x = 0; x < opt.w; x += T) {
+        gl.scissor(x, y, T, T);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.finish();
+        done++;
+        if (done % 8 === 0) await new Promise((r) => setTimeout(r, 0));
+      }
+    }
+    return c.toDataURL("image/png");
+  };
+</script>
