@@ -20,8 +20,6 @@ export const views = {
   "hero-tall": { w: 1170, h: 2080, cam: [0.3, 1.0, 21], target: [0, 5.4, 0], shift: [0.0, -0.32], lens: 2.0, mode: 0, aa: 3, sun: SUN },
   // Close on the fracture.
   fracture: { w: 1920, h: 1200, cam: [-3.4, 5.6, 7.8], target: [-0.1, 6.5, 0], shift: [0, 0], lens: 2.3, mode: 0, aa: 3, sun: SUN },
-  // Close on the crystals erupting from a fracture.
-  crystals: { w: 2400, h: 1350, cam: [3.6, 5.4, 5.6], target: [0.5, 5.2, 0], shift: [0, 0], lens: 2.2, mode: 0, aa: 3, sun: SUN },
   // Wide world view, for the studio pages.
   ridge: { w: 2400, h: 1000, cam: [8.5, 2.2, 36], target: [-3, 4.0, 0], shift: [0, 0.14], lens: 2.3, mode: 0, aa: 3, sun: SUN },
   // Engineering view of the hero.
@@ -51,10 +49,10 @@ await page.goto(pathToFileURL(join(here, "scene.html")).href);
 for (const name of wanted.length ? wanted : Object.keys(views)) {
   const v = { ...views[name], tile: 128 };
   if (preview) {
-    const s = 1100 / Math.max(v.w, v.h);
+    const s = 720 / Math.max(v.w, v.h);
     v.w = Math.round(v.w * s);
     v.h = Math.round(v.h * s);
-    v.aa = 2;
+    v.aa = 1;
   }
   const started = Date.now();
   const url = await page.evaluate((o) => window.renderScene(o), v);

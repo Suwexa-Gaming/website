@@ -1,7 +1,6 @@
 import { ContactSection } from "@/components/sections/ContactSection";
 import { FeaturedGames } from "@/components/sections/FeaturedGames";
 import { Hero } from "@/components/sections/Hero";
-import { Interlude } from "@/components/sections/Interlude";
 import { NewsSection } from "@/components/sections/NewsSection";
 import { Philosophy } from "@/components/sections/Philosophy";
 import { Showcase } from "@/components/sections/Showcase";
@@ -14,7 +13,6 @@ export default function Home() {
       <StudioIntro />
       <FeaturedGames />
       <Philosophy />
-      <Interlude />
       <Showcase />
       <NewsSection />
       <ContactSection />

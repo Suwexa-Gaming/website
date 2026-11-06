@@ -1,6 +1,13 @@
+import { networkInterfaces } from "node:os";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
+
+// Lets phones on the same network use the development preview. Has no effect in production.
+const localAddresses = Object.values(networkInterfaces())
+  .flat()
+  .filter((net) => net?.family === "IPv4" && !net.internal)
+  .map((net) => net!.address);
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -28,6 +35,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
   devIndicators: false,
+  allowedDevOrigins: localAddresses,
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 828, 1080, 1440, 1920, 2560],

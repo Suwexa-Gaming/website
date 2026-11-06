@@ -125,8 +125,6 @@ export function Header() {
         inert={!open}
         className={`fixed inset-0 isolate flex flex-col bg-ink transition-opacity duration-500 lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
-        <Image src="/images/studio/hero-tall.webp" alt="" fill sizes="100vw" className="-z-10 object-cover object-top opacity-35" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/30" />
         <nav aria-label="Mobile" className="shell relative flex flex-1 flex-col justify-center gap-1 pt-20">
           {navigation.map((item, index) => (
             <Link
